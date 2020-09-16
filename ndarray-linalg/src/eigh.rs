@@ -189,7 +189,7 @@ where
     type EigVal = Array1<A::Real>;
 
     fn eigvalsh_inplace(&mut self, uplo: UPLO) -> Result<Self::EigVal> {
-        let s = A::eigh(true, self.square_layout()?, uplo, self.as_allocated_mut()?)?;
+        let s = A::eigh(false, self.square_layout()?, uplo, self.as_allocated_mut()?)?;
         Ok(ArrayBase::from(s))
     }
 }

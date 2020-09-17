@@ -217,6 +217,20 @@ macro_rules! impl_test_real {
             }
 
             #[test]
+            fn [<$real _eigvals_only >]() {
+                let a = test_matrix_real::<$real>();
+                let e = a.eigvals().unwrap();
+                assert_close_l2!(&e, &answer_eig_real::<$real>(), 1.0e-3);
+            }
+
+            #[test]
+            fn [<$real _eigvals_only_t>]() {
+                let a = test_matrix_real_t::<$real>();
+                let e = a.eigvals().unwrap();
+                assert_close_l2!(&e, &answer_eig_real::<$real>(), 1.0e-3);
+            }
+
+            #[test]
             fn [<$real _eig>]() {
                 let a = test_matrix_real::<$real>();
                 let (e, vecs) = a.eig().unwrap();
@@ -251,6 +265,20 @@ macro_rules! impl_test_complex {
             fn [<$complex _eigvals_t>]() {
                 let a = test_matrix_complex_t::<$complex>();
                 let (e, _vecs) = a.eig().unwrap();
+                assert_close_l2!(&e, &answer_eig_complex::<$complex>(), 1.0e-3);
+            }
+
+            #[test]
+            fn [<$complex _eigvals_only >]() {
+                let a = test_matrix_complex::<$complex>();
+                let e = a.eigvals().unwrap();
+                assert_close_l2!(&e, &answer_eig_complex::<$complex>(), 1.0e-3);
+            }
+
+            #[test]
+            fn [<$complex _eigvals_only_t>]() {
+                let a = test_matrix_complex_t::<$complex>();
+                let e = a.eigvals().unwrap();
                 assert_close_l2!(&e, &answer_eig_complex::<$complex>(), 1.0e-3);
             }
 

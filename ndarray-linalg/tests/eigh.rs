@@ -7,6 +7,10 @@ fn fixed() {
     let (e, vecs): (Array1<_>, Array2<_>) = (&a).eigh(UPLO::Upper).unwrap();
     assert_close_l2!(&e, &arr1(&[2.0, 2.0, 5.0]), 1.0e-7);
 
+    // Check if calculation of eigenvalues without vectors yields the same result
+    let e2: Array1<_> = (&a).eigvalsh(UPLO::Upper).unwrap();
+    assert_close_l2!(&e, &e2, 1.0e-7);
+
     // Check eigenvectors are orthogonalized
     let s = vecs.t().dot(&vecs);
     assert_close_l2!(&s, &Array::eye(3), 1.0e-7);
@@ -23,6 +27,10 @@ fn fixed_t() {
     let a = arr2(&[[3.0, 1.0, 1.0], [1.0, 3.0, 1.0], [1.0, 1.0, 3.0]]).reversed_axes();
     let (e, vecs): (Array1<_>, Array2<_>) = (&a).eigh(UPLO::Upper).unwrap();
     assert_close_l2!(&e, &arr1(&[2.0, 2.0, 5.0]), 1.0e-7);
+
+    // Check if calculation of eigenvalues without vectors yields the same result
+    let e2: Array1<_> = (&a).eigvalsh(UPLO::Upper).unwrap();
+    assert_close_l2!(&e, &e2, 1.0e-7);
 
     // Check eigenvectors are orthogonalized
     let s = vecs.t().dot(&vecs);
@@ -41,6 +49,10 @@ fn fixed_lower() {
     let (e, vecs): (Array1<_>, Array2<_>) = (&a).eigh(UPLO::Lower).unwrap();
     assert_close_l2!(&e, &arr1(&[2.0, 2.0, 5.0]), 1.0e-7);
 
+    // Check if calculation of eigenvalues without vectors yields the same result
+    let e2: Array1<_> = (&a).eigvalsh(UPLO::Upper).unwrap();
+    assert_close_l2!(&e, &e2, 1.0e-7);
+
     // Check eigenvectors are orthogonalized
     let s = vecs.t().dot(&vecs);
     assert_close_l2!(&s, &Array::eye(3), 1.0e-7);
@@ -57,6 +69,10 @@ fn fixed_t_lower() {
     let a = arr2(&[[3.0, 1.0, 1.0], [1.0, 3.0, 1.0], [1.0, 1.0, 3.0]]).reversed_axes();
     let (e, vecs): (Array1<_>, Array2<_>) = (&a).eigh(UPLO::Lower).unwrap();
     assert_close_l2!(&e, &arr1(&[2.0, 2.0, 5.0]), 1.0e-7);
+
+    // Check if calculation of eigenvalues without vectors yields the same result
+    let e2: Array1<_> = (&a).eigvalsh(UPLO::Upper).unwrap();
+    assert_close_l2!(&e, &e2, 1.0e-7);
 
     // Check eigenvectors are orthogonalized
     let s = vecs.t().dot(&vecs);

@@ -97,3 +97,5 @@ pub use trace::*;
 pub use triangular::*;
 pub use tridiagonal::*;
 pub use types::*;
+
+pub use lax::Range;

@@ -169,6 +169,30 @@ impl NormType {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum Range<T> {
+    All,
+    Value(T, T),
+    Index(i32, i32),
+}
+
+impl<T: Default + Copy> Range<T> {
+    pub fn parameters(&self) -> (u8, T, T, i32, i32, Option<i32>) {
+        match self {
+            Range::All => (b'A', T::default(), T::default(), 0, 0, None),
+            Range::Value(lower, upper) => (b'V', *lower, *upper, 0, 0, None),
+            Range::Index(lower, upper) => (
+                b'I',
+                T::default(),
+                T::default(),
+                *lower,
+                *upper,
+                Some(upper - lower + 1),
+            ),
+        }
+    }
+}
+
 /// Create a vector without initialization
 ///
 /// Safety

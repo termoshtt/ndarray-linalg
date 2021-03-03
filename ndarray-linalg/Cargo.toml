@@ -1,6 +1,6 @@
 [package]
 name    = "ndarray-linalg"
-version = "0.13.0-alpha.0"
+version = "0.13.0"
 authors = ["Toshiki Teramura <toshiki.teramura@gmail.com>"]
 edition = "2018"
 
@@ -8,8 +8,8 @@ description   = "Linear algebra package for rust-ndarray using LAPACK"
 documentation = "https://docs.rs/ndarray-linalg/"
 repository    = "https://github.com/rust-ndarray/ndarray-linalg"
 keywords      = ["ndarray", "lapack", "matrix"]
-license       = "MIT"
-readme        = "README.md"
+license       = "MIT OR Apache-2.0"
+readme        = "../README.md"
 categories    = ["algorithms", "science"]
 
 [features]
@@ -29,14 +29,14 @@ intel-mkl-static = ["lax/intel-mkl-static"]
 intel-mkl-system = ["lax/intel-mkl-system"]
 
 [dependencies]
-cauchy = "0.2.2"
-num-complex = "0.2.4"
+cauchy = "0.3.0"
+num-complex = "0.3.1"
 num-traits  = "0.2.11"
-rand = "0.5"
+rand = "0.7.3"
 thiserror = "1.0.20"
 
 [dependencies.ndarray]
-version = "0.13.0"
+version = "0.14"
 features = ["blas", "approx"]
 default-features = false
 
@@ -46,9 +46,10 @@ path = "../lax"
 default-features = false
 
 [dev-dependencies]
-paste = "0.1.9"
-criterion = "0.3.1"
-approx = { version = "0.3.2", features = ["num-complex"] }
+paste = "1.0"
+criterion = "0.3"
+# Keep the same version as ndarray's dependency!
+approx = { version = "0.4", features = ["num-complex"] }
 
 [[bench]]
 name = "truncated_eig"
@@ -80,3 +81,6 @@ harness = false
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "katex-header.html"]
+
+[package.metadata.release]
+no-dev-version = true

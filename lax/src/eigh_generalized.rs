@@ -1,23 +1,28 @@
-//! Eigenvalue decomposition for Symmetric/Hermite matrices
-
 use super::*;
 use crate::{error::*, layout::MatrixLayout};
 use cauchy::*;
 use num_traits::{ToPrimitive, Zero};
 
-pub(crate) trait Eigh: Scalar {
-    /// Allocate working memory for eigenvalue problem
-    fn eigh_work(calc_eigenvec: bool, layout: MatrixLayout, uplo: UPLO) -> Result<EighWork<Self>>;
+/// Generalized eigenvalue problem for Symmetric/Hermite matrices
+pub(crate) trait EighGeneralized: Scalar {
+    /// Allocate working memory
+    fn eigh_generalized_work(
+        calc_eigenvec: bool,
+        layout: MatrixLayout,
+        uplo: UPLO,
+    ) -> Result<EighGeneralizedWork<Self>>;
 
-    /// Solve eigenvalue problem
-    fn eigh_calc<'work>(
-        work: &'work mut EighWork<Self>,
+    /// Solve generalized eigenvalue problem
+    fn eigh_generalized_calc<'work>(
+        work: &'work mut EighGeneralizedWork<Self>,
         a: &mut [Self],
+        b: &mut [Self],
     ) -> Result<&'work [Self::Real]>;
 }
 
-/// Working memory for symmetric/Hermitian eigenvalue problem. See [LapackStrict trait](trait.LapackStrict.html)
-pub struct EighWork<T: Scalar> {
+/// Working memory for symmetric/Hermitian generalized eigenvalue problem.
+/// See [LapackStrict trait](trait.LapackStrict.html)
+pub struct EighGeneralizedWork<T: Scalar> {
     jobz: u8,
     uplo: UPLO,
     n: i32,
@@ -30,8 +35,12 @@ pub struct EighWork<T: Scalar> {
 
 macro_rules! impl_eigh_work_real {
     ($scalar:ty, $ev:path) => {
-        impl Eigh for $scalar {
-            fn eigh_work(calc_v: bool, layout: MatrixLayout, uplo: UPLO) -> Result<EighWork<Self>> {
+        impl EighGeneralized for $scalar {
+            fn eigh_generalized_work(
+                calc_v: bool,
+                layout: MatrixLayout,
+                uplo: UPLO,
+            ) -> Result<EighGeneralizedWork<Self>> {
                 assert_eq!(layout.len(), layout.lda());
                 let n = layout.len();
                 let jobz = if calc_v { b'V' } else { b'N' };
@@ -41,10 +50,13 @@ macro_rules! impl_eigh_work_real {
                 let mut work_size = [Self::zero()];
                 unsafe {
                     $ev(
+                        &[ITYPE::AxlBx as i32],
                         jobz,
                         uplo as u8,
                         n,
                         &mut [], // matrix A is not referenced in query mode
+                        n,
+                        &mut [], // matrix B is not referenced in query mode
                         n,
                         &mut eigs,
                         &mut work_size,
@@ -55,7 +67,7 @@ macro_rules! impl_eigh_work_real {
                 info.as_lapack_result()?;
                 let lwork = work_size[0].to_usize().unwrap();
                 let work = unsafe { vec_uninit(lwork) };
-                Ok(EighWork {
+                Ok(EighGeneralizedWork {
                     jobz,
                     uplo,
                     n,
@@ -65,19 +77,23 @@ macro_rules! impl_eigh_work_real {
                 })
             }
 
-            fn eigh_calc<'work>(
-                work: &'work mut EighWork<Self>,
+            fn eigh_generalized_calc<'work>(
+                work: &'work mut EighGeneralizedWork<Self>,
                 a: &mut [Self],
+                b: &mut [Self],
             ) -> Result<&'work [Self::Real]> {
                 assert_eq!(a.len(), (work.n * work.n) as usize);
                 let mut info = 0;
                 let lwork = work.work.len() as i32;
                 unsafe {
                     $ev(
+                        &[ITYPE::AxlBx as i32],
                         work.jobz,
                         work.uplo as u8,
                         work.n,
                         a,
+                        work.n,
+                        b,
                         work.n,
                         &mut work.eigs,
                         &mut work.work,
@@ -92,16 +108,22 @@ macro_rules! impl_eigh_work_real {
     };
 }
 
-impl_eigh_work_real!(f32, lapack::ssyev);
-impl_eigh_work_real!(f64, lapack::dsyev);
+impl_eigh_work_real!(f32, lapack::ssygv);
+impl_eigh_work_real!(f64, lapack::dsygv);
 
 macro_rules! impl_eigh_work_complex {
     ($scalar:ty, $ev:path) => {
-        impl Eigh for $scalar {
-            fn eigh_work(calc_v: bool, layout: MatrixLayout, uplo: UPLO) -> Result<EighWork<Self>> {
+        impl EighGeneralized for $scalar {
+            fn eigh_generalized_work(
+                calc_v: bool,
+                layout: MatrixLayout,
+                uplo: UPLO,
+            ) -> Result<EighGeneralizedWork<Self>> {
                 assert_eq!(layout.len(), layout.lda());
                 let n = layout.len();
                 let jobz = if calc_v { b'V' } else { b'N' };
+
+                // Different from work array, eigs must be touched from Rust
                 let mut eigs = unsafe { vec_uninit(n as usize) };
 
                 let mut info = 0;
@@ -109,8 +131,11 @@ macro_rules! impl_eigh_work_complex {
                 let mut rwork = unsafe { vec_uninit(3 * n as usize - 2) };
                 unsafe {
                     $ev(
+                        &[ITYPE::AxlBx as i32],
                         jobz,
                         uplo as u8,
+                        n,
+                        &mut [],
                         n,
                         &mut [],
                         n,
@@ -124,7 +149,7 @@ macro_rules! impl_eigh_work_complex {
                 info.as_lapack_result()?;
                 let lwork = work_size[0].to_usize().unwrap();
                 let work = unsafe { vec_uninit(lwork) };
-                Ok(EighWork {
+                Ok(EighGeneralizedWork {
                     jobz,
                     uplo,
                     n,
@@ -134,19 +159,23 @@ macro_rules! impl_eigh_work_complex {
                 })
             }
 
-            fn eigh_calc<'work>(
-                work: &'work mut EighWork<Self>,
+            fn eigh_generalized_calc<'work>(
+                work: &'work mut EighGeneralizedWork<Self>,
                 a: &mut [Self],
+                b: &mut [Self],
             ) -> Result<&'work [Self::Real]> {
                 assert_eq!(a.len(), (work.n * work.n) as usize);
                 let mut info = 0;
                 let lwork = work.work.len() as i32;
                 unsafe {
                     $ev(
+                        &[ITYPE::AxlBx as i32],
                         work.jobz,
                         work.uplo as u8,
                         work.n,
                         a,
+                        work.n,
+                        b,
                         work.n,
                         &mut work.eigs,
                         &mut work.work,
@@ -162,5 +191,5 @@ macro_rules! impl_eigh_work_complex {
     };
 }
 
-impl_eigh_work_complex!(c32, lapack::cheev);
-impl_eigh_work_complex!(c64, lapack::zheev);
+impl_eigh_work_complex!(c32, lapack::chegv);
+impl_eigh_work_complex!(c64, lapack::zhegv);

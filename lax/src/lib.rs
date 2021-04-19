@@ -74,57 +74,37 @@ pub mod layout;
 mod cholesky;
 mod eig;
 mod eigh;
+mod eigh_generalized;
 mod least_squares;
 mod opnorm;
 mod qr;
 mod rcond;
 mod solve;
 mod solveh;
+mod strict;
 mod svd;
 mod svddc;
+mod traits;
 mod triangular;
 mod tridiagonal;
 
-pub use self::cholesky::*;
 pub use self::eig::*;
 pub use self::eigh::*;
+pub use self::eigh_generalized::*;
 pub use self::least_squares::*;
 pub use self::opnorm::*;
 pub use self::qr::*;
 pub use self::rcond::*;
 pub use self::solve::*;
 pub use self::solveh::*;
+pub use self::strict::*;
 pub use self::svd::*;
 pub use self::svddc::*;
+pub use self::traits::*;
 pub use self::triangular::*;
 pub use self::tridiagonal::*;
 
-use cauchy::*;
-
 pub type Pivot = Vec<i32>;
-
-/// Trait for primitive types which implements LAPACK subroutines
-pub trait Lapack:
-    OperatorNorm_
-    + QR_
-    + SVD_
-    + SVDDC_
-    + Solve_
-    + Solveh_
-    + Cholesky_
-    + Eig_
-    + Eigh_
-    + Triangular_
-    + Tridiagonal_
-    + Rcond_
-    + LeastSquaresSvdDivideConquer_
-{
-}
-
-impl Lapack for f32 {}
-impl Lapack for f64 {}
-impl Lapack for c32 {}
-impl Lapack for c64 {}
 
 /// Upper/Lower specification for seveal usages
 #[derive(Debug, Clone, Copy)]
@@ -167,6 +147,18 @@ impl NormType {
             NormType::Frobenius => NormType::Frobenius,
         }
     }
+}
+
+/// Types of generalized eigenvalue problem
+#[allow(dead_code)] // FIXME create interface to use ABxlx and BAxlx
+#[repr(i32)]
+pub enum ITYPE {
+    /// Solve $ A x = \lambda B x $
+    AxlBx = 1,
+    /// Solve $ A B x = \lambda x $
+    ABxlx = 2,
+    /// Solve $ B A x = \lambda x $
+    BAxlx = 3,
 }
 
 /// Create a vector without initialization
